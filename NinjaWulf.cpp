@@ -1,8 +1,11 @@
+//Headers
 #include<allegro.h>
 #include<stdio.h>
 #include<stdlib.h>
 #include<iostream>
 #include<math.h>
+
+//Define constants
 #define scrx 800
 #define scry 600
 #define tile_x 32
@@ -10,16 +13,22 @@
 #define mapheight 30
 #define mapwidth 50
 #define ennum 10
-#define gm_time 180
+#define gm_time 300
+#define enspeed 4
 #define WHITE makecol(255, 255, 255)
 
 using namespace std;
-
-volatile long speed_counter = 0;
+//Speed Counter
+volatile long speed_counter = 0;\
 void increment_speed_counter(){
 	speed_counter++;
 }END_OF_FUNCTION(increment_speed_counter);
 
+//Global variables for initialization and enemy speed increase
+bool initialize = true;
+int enspd = 0;
+
+//Map loading class
 struct map
 {
      int stage[mapheight][mapwidth];
@@ -27,6 +36,7 @@ struct map
      void load();
 };
 
+//Player Structure
 struct player
 {
     void setup(int,int);
@@ -44,6 +54,7 @@ struct player
     int hp;
 };
 
+//Enemy Strucutre
 struct enemy
 {
     void setup(int,int, int, int);
@@ -61,6 +72,7 @@ struct enemy
     int hp;
 };
 
+//General Game Functions
 bool encollide(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2);
 bool collide(int l,int t,int w, int h, int map[][mapwidth]);
 bool wincollide(int l,int t,int w, int h, int map[][mapwidth]);
@@ -69,8 +81,10 @@ void gameover();
 void gamewin();
 void start(int &num);
 
+//Main
 int main(int argc, char *argv[]){
     
+    //Initializing Allegro
     allegro_init();
     install_keyboard();
     install_mouse(); 
@@ -104,15 +118,17 @@ int main(int argc, char *argv[]){
     BITMAP *background = create_bitmap(32*mapwidth,32*mapheight);
     
     //VARIABLES-------------------------------------------------------------------------------------------------
+    //Map variables
     map map;
     player p;
     enemy en[ennum];
     
+    //General Variables
     int walk_counter;
     int ani_counter;
     int ani;
     int walk_ani;
-    int tilt=0;
+    int tilt;
     int mapscroll_x;
     int mapscroll_y;
     int jump_num;
@@ -127,32 +143,71 @@ int main(int argc, char *argv[]){
     bool keyhold = false;
     bool slow;
     bool tackle=false;
-    
+    //Setting the colour variables for the draw function
     int colorchange[4];
     colorchange[0] = 300;
     colorchange[1] = 300;
     colorchange[2] = 300;
     colorchange[3] = 300;
-    
+    //Player Variables
     p.hp = 4;
     p.direction = 1;
     p.gm_counter = 500;
     map.num = 0;
-    
-    bool initialize = true;
-    
+
     while(!key[KEY_ESC])
     {
+        //Initializing each level of the game
         if(startinit == 1)
             start(startinit);
+        //Level initializing sequence
         if(initialize == true)
         {
+            //Character angle
             angle = 0;
+            for(int i=0;i<ennum;i++){
+                en[i].hp=25;
+            }
+            //Map number 1
             if(map.num == 0)
             {
+                //Player Setup (xpos,ypos)
                 p.setup(66,322);
-                en[0].setup(483,310,1,0);
-                en[1].setup(526,250,0,0);
+                //Enemy setup (xpos,ypos,facing direction, moving or not)
+                en[0].setup(483,50,1,0);
+                en[1].setup(526,50,0,0);
+                en[2].setup(617,50,0,1);
+                en[3].setup(587,50,0,1);
+                en[4].setup(711,320,1,1);
+                en[5].setup(687,320,0,1);
+                en[6].setup(647,320,1,1);
+                en[7].setup(687,320,0,1);
+                en[8].setup(647,320,1,1);
+                en[9].setup(687,320,0,1);
+                en[10].setup(647,320,1,1);
+            }
+            //Map number 2
+            else if(map.num == 1)
+            {
+                p.setup(60,322);
+                en[0].setup(800,320,1,1);
+                en[1].setup(711,250,1,1);
+                en[2].setup(800,320,0,1);
+                en[3].setup(800,320,0,1);
+                en[4].setup(800,320,1,1);
+                en[5].setup(800,320,0,1);
+                en[6].setup(800,320,1,1);
+                en[7].setup(687,320,0,1);
+                en[8].setup(647,320,1,1);
+                en[9].setup(687,320,0,1);
+                en[10].setup(647,320,1,1);
+            }
+            //Map number 3
+            else if(map.num == 2)
+            {
+                p.setup(60,322);
+                en[0].setup(711,320,1,1);
+                en[1].setup(711,250,1,1);
                 en[2].setup(617,320,0,1);
                 en[3].setup(587,320,0,1);
                 en[4].setup(711,320,1,1);
@@ -163,8 +218,12 @@ int main(int argc, char *argv[]){
                 en[9].setup(687,320,0,1);
                 en[10].setup(647,320,1,1);
             }
+            
+            //loading map
             map.load();
+            //drawing background
             draw_gouraud_sprite(background, bg, 0, 0,250,250,0,0);
+            //Setting up map tiles
             for (int i=0;i<mapheight;i++)
             {
                 for (int j=0;j<mapwidth;j++)
@@ -183,6 +242,7 @@ int main(int argc, char *argv[]){
         }
         while(speed_counter > 0)
         {
+            //Map scrolling for exploring the map
             mapscroll_x = p.x + pright->w/2 - scrx/2;
             mapscroll_y = p.y + pright->h/2 - scry/2;
             if(mapscroll_x <= 0)
@@ -194,29 +254,34 @@ int main(int argc, char *argv[]){
             if(mapscroll_y >= mapheight*tile_y-scry)
                 mapscroll_y = mapheight*tile_y-scry;
             angle = 0;
-           
+            //Changing player direction when he moves left and right
             if(int(p.xspeed) > 0)
                 p.direction = 1;
             else if(int(p.xspeed) < 0)
                 p.direction = 0;
             
+            //player/map_tile collision
             if(collide(p.x,p.y+1,pright->w, pright->h,map.stage))
                 jump_num = 0;
+            // If you're still alive
             if(!p.lose())
             {
+                //kill skill to kill the enemy
                 if(key[KEY_X] && tackle == true && p.xspeed <1 && int(p.xspeed) == 0 && collide(p.x,p.y+1,pright->w, pright->h,map.stage))
                 {
                     kill = true;
                 }
-           
+                //if enemy is being killed, this happens
                 if(kill == true)
                 {
                     for(int i=0;i<ennum;i++)
                     {
                         if(en[i].kill==true)
                         {
+                            //hurts enemy
                             en[i].hurt = true;
                             en[i].hp--;
+                            //if enemy is dead, this happens
                             if(en[i].dead())
                             {
                                 en[i].y=p.y+4;
@@ -227,34 +292,37 @@ int main(int argc, char *argv[]){
                         }
                     }
                 }
-                
+                //godmode
                 if(p.gm())
                     p.hidden = true;
+                //not hidden if not pressing down
                 if(!key[KEY_DOWN] && !p.gm())
                     p.hidden = false;
                 printf("%d\n", tilt);
+                
                 if(dash == false && tackle == false)
                 {
-              		if(key[KEY_DOWN]) 
-            		{
-                        p.hidden = true;
-            		}
+                   
+            		//jump
                     if(key[KEY_UP] && jump_num < 2 && keyhold == false && dash == false)
             		{   
                         p.yspeed = -8;
                         jump_num++;
                         keyhold = true;
             		} 
+            		//moves left
             		if(key[KEY_LEFT]) 
             		{
                         if(p.xspeed>=-6)
                             p.xspeed-=0.75;
             		}
+            		//moves right
                 	if(key[KEY_RIGHT])
             		{
                         if(p.xspeed<=6)
                             p.xspeed+=0.75;
             		}
+            		//tackles enemies
             		if(key[KEY_Z] && tilt == 0)
             		{
                         p.yspeed = -7;
@@ -262,14 +330,17 @@ int main(int argc, char *argv[]){
                             p.xspeed = 22;
                         else if(p.direction == 0)
                             p.xspeed = -22;
+                        //Dash mode
                         dash = true;
                     }
+                    //prevents flying if you hold up
                     if(!key[KEY_UP])
                         keyhold = false;
                 }
       		    //MOVEMENTS---------------------------------------------------------------------------------------------------------------------------------------
         		for(int i = 0;i<abs(int(p.yspeed));i++)
     		    {
+                    //vertical movement collision
                     if(p.yspeed>=0)
                     {
                         if(!collide(p.x,p.y+1,pright->w, pright->h,map.stage))
@@ -277,6 +348,7 @@ int main(int argc, char *argv[]){
                         else
                             break;
                     }
+                    //more vertical movement collision
                     if(p.yspeed<=0)
                     {
                         if(!collide(p.x,p.y-1,pright->w, pright->h,map.stage))
@@ -289,6 +361,7 @@ int main(int argc, char *argv[]){
                     }
                 }
                 
+                //Horizontal Movement Collision
                 for(int i = 0;i<abs(int(p.xspeed));i++)
     		    {
                     if(p.xspeed>=0)
@@ -314,6 +387,7 @@ int main(int argc, char *argv[]){
                 {
                     if(int(p.xspeed) == 0)
                         dash = false;
+                    //Gound friction when the player falls downz
                     else
                     {
                         if(p.xspeed > 0)
@@ -322,6 +396,7 @@ int main(int argc, char *argv[]){
                             p.xspeed++;
                     }
                 }
+                //Enemy functions
                 for(int i = 0;i<ennum;i++)
                 {
                     if(!en[i].dead())
@@ -333,6 +408,7 @@ int main(int argc, char *argv[]){
                         }
                     }
                 }
+                //when an enemy is tackled
                 if (tackle == true || dash == true)
                 {
                     if(p.direction == 1 && tilt <= 62)
@@ -346,6 +422,7 @@ int main(int argc, char *argv[]){
                 }
                 else
                 {
+                    //player tilting stuff
                     for(int i =0;i<3;i++)
                     {
                         if(tilt >0)
@@ -355,6 +432,7 @@ int main(int argc, char *argv[]){
                         else break;
                     }
                 }
+                //change the angle from an integer to a fixed
                 angle = itofix(tilt);
     
                 //MOVEMENT COLLISION/GRAVITY/WALL------------------------------------------------------------------------------------------------------------------------------
@@ -383,38 +461,46 @@ int main(int argc, char *argv[]){
     		    {
                     if(!en[i].dead())
                     {
-                        if(encollide(p.x, p.y, pright->w, pright->h, en[i].x, en[i].y, enright->w, enright->h) && p.gm() == false && dash == false && en[i].kill == false && (tilt == 64 || tilt == -64 || tilt == 0))
-                        {
-                            p.dead = true;
-                            p.hp--;
-                            for(int j = 0;j<ennum;j++)
-                            {
-                                if (en[j].kill == true)
+                        if(p.hidden == false){
+                            if(tackle == false){
+                                //enemy collision with player
+                                if(encollide(p.x, p.y, pright->w, pright->h, en[i].x, en[i].y, enright->w, enright->h) && p.gm() == false && dash == false && en[i].kill == false && (tilt == 64 || tilt == -64 || tilt == 0))
                                 {
-                                    en[j].kill = false;
-                                    en[j].hurt = false;
-                                    tackle = false;
-                                    kill = false;
+                                    p.dead = true;
+                                    p.hp--;
+                                    if (p.hp <=0){ //Error checking                     
+                                        set_gfx_mode(GFX_TEXT,0,0,0,0);
+                                        allegro_message("You Lose!");
+                                        exit(EXIT_FAILURE);
+                                    }
+                                    for(int j = 0;j<ennum;j++)
+                                    {
+                                        if (en[j].kill == true)
+                                        {
+                                            en[j].kill = false;
+                                            en[j].hurt = false;
+                                            tackle = false;
+                                            kill = false;
+                                        }
+                                    }
+                                    if(!p.lose())
+                                    {
+                                        p.gm_counter = 0;
+                                        p.xspeed=-10;
+                                        p.yspeed=-5;
+                                    }
+                                    else 
+                                    {
+                                        return 0;
+                                    }
                                 }
-                            }
-                            if(!p.lose())
-                            {
-                                p.gm_counter = 0;
-                                if(p.direction == 1)
-                                    p.xspeed=-10;
-                                else
-                                    p.xspeed=10;
-                                p.yspeed=-5;
-                            }
-                            else 
-                            {
-                                return 0;
                             }
                         }  
                     }
                 }
             }
-		        
+          
+            
             //ENEMY SHTUUFFFF-------------------------------------------------------------------------------------------------------------------------------------
     		
     		
@@ -430,6 +516,7 @@ int main(int argc, char *argv[]){
                             {
                                 for(int j = 0;j<500;j++)
                                 {
+                                    //enemy collision with wall
                                     if(!collide(en[i].x-j,en[i].y,enright->w, enright->h,map.stage))
                                         continue;
                                     else 
@@ -438,9 +525,10 @@ int main(int argc, char *argv[]){
                                         break;
                                     }
                                 }
+                                //enemy detection function
                                 for(int j = 0;j<d1;j++)
                                 {
-                                    if(!encollide(en[i].x-j,en[i].y,enright->w,enright->h, p.x, p.y, pright->w, pright->h))
+                                    if(!encollide(en[i].x-j,en[i].y,enright->w,enright->h, p.x, p.y, pright->w, pright->h) || p.hidden == true)
                                         continue;
                                     else
                                     {
@@ -449,7 +537,7 @@ int main(int argc, char *argv[]){
                                     } 
                                 }
                             }
-                            
+                            //enemy collision with wall
                             if(en[i].direction == 1)
                             {
                                 for(int j = 0;j<500;j++)
@@ -462,9 +550,10 @@ int main(int argc, char *argv[]){
                                         break;
                                     }
                                 }
+                                //enemy detection 
                                 for(int j = 0;j<d1;j++)
                                 {
-                                    if(!encollide(en[i].x+j,en[i].y,enright->w,enright->h, p.x, p.y, pright->w, pright->h))
+                                    if(!encollide(en[i].x+j,en[i].y,enright->w,enright->h, p.x, p.y, pright->w, pright->h) || p.hidden == true)
                                         continue;
                                     else
                                     {
@@ -473,23 +562,28 @@ int main(int argc, char *argv[]){
                                     }       
                                 }
                             }
+                            //hidden mode
+                            if (p.hidden == true)
+                                en[i].detect = false;
                             
+                            //what enemy does when he detects player
                             if (en[i].detect == true)
                             {
                                 if(p.x+pright->w<en[i].x)
                                 {
                                     en[i].direction = 0;
-                                    en[i].xspeed=-4;
+                                    en[i].xspeed=-enspeed-enspd;
                                 }
                                 else if(p.x>en[i].x+enright->w)
                                 {
                                     en[i].direction = 1;
-                                    en[i].xspeed=4;
+                                    en[i].xspeed=enspeed+enspd;
                                 }
                             }
                         }
                         else
                             en[i].detect = false;
+                        //when enemy isn't detecting the player
                         if(en[i].detect == false && en[i].movement == true)
                         {
                              if (en[i].direction == 1)
@@ -507,6 +601,7 @@ int main(int argc, char *argv[]){
                                      en[i].direction = 1;
                              }
                         }
+                        //enemy ground collision
                         for(int j = 0;j<abs(int(en[i].yspeed));j++)
             		    {
                             if(en[i].yspeed>=0)
@@ -527,7 +622,7 @@ int main(int argc, char *argv[]){
                                 }
                             }
                         }
-                        
+                        //more enemy wall collision
                         for(int j = 0;j<abs(int(en[i].xspeed));j++)
             		    {
                             if(en[i].xspeed>=0)
@@ -552,6 +647,7 @@ int main(int argc, char *argv[]){
                 		    en[i].yspeed+=0.5;
             		    else
             		        en[i].yspeed = 0;
+            		    //en[i].detect = false;
                     }
                     else if(en[i].kill == true)
                     {
@@ -561,6 +657,7 @@ int main(int argc, char *argv[]){
                     }
                 }
             }
+            //counters
             if(int(p.xspeed) != 0)
                 walk_counter ++;
             kill_counter++;
@@ -574,13 +671,14 @@ int main(int argc, char *argv[]){
             kill_counter = 0;
         if(flash_counter >8)
             flash_counter = 0;
-            
+        //walking animation
         if(int(p.xspeed) != 0)
             walk_ani = int(floor(double(walk_counter/3)))*2;
         else
             walk_ani = 0;
-        
+        //drawing background
         draw_gouraud_sprite(buffer, background, 0-mapscroll_x, 0-mapscroll_y,colorchange[0],colorchange[1],colorchange[2],colorchange[3]);
+        //this is what happens when you kill the enemy
         for(int i = 0;i<ennum;i++)
         {
             if(!en[i].dead())
@@ -599,7 +697,7 @@ int main(int argc, char *argv[]){
                             en[i].x = p.x;
                             en[i].y = p.y+12;
                         }    
-                    
+                        //draw red lines to show the stabbing animation
                         line(buffer,en[i].x+(rand() % 50-25)-mapscroll_x,en[i].y-+(rand() % 50-25)-mapscroll_y,en[i].x+enright->w+(rand() % 50-25)-mapscroll_x,en[i].y+enright->h+(rand() % 50-25)-mapscroll_y,makecol(255,0,0));
                         line(buffer,en[i].x+(rand() % 50-25)-mapscroll_x,en[i].y-+(rand() % 50-25)-mapscroll_y,en[i].x+enright->w+(rand() % 50-25)-mapscroll_x,en[i].y+enright->h+(rand() % 50-25)-mapscroll_y,makecol(255,0,0));
                         line(buffer,en[i].x+(rand() % 50-25)-mapscroll_x,en[i].y-+(rand() % 50-25)-mapscroll_y,en[i].x+enright->w+(rand() % 50-25)-mapscroll_x,en[i].y+enright->h+(rand() % 50-25)-mapscroll_y,makecol(255,0,0));
@@ -623,14 +721,16 @@ int main(int argc, char *argv[]){
                         line(buffer,en[i].x+(rand() % 50-25)-mapscroll_x,en[i].y-+(rand() % 50-25)-mapscroll_y,en[i].x+enright->w+(rand() % 50-25)-mapscroll_x,en[i].y+enright->h+(rand() % 50-25)-mapscroll_y,makecol(255,0,0));
                     }
                 }
+                //draw enemies
                 if (en[i].direction == 1)
                     rotate_sprite(buffer,enright,en[i].x-mapscroll_x,en[i].y-mapscroll_y,en[i].angle);
                 else
                     rotate_sprite(buffer,enleft,en[i].x-mapscroll_x,en[i].y-mapscroll_y,en[i].angle);
-                
+                //enemy position when he dies
                 if(en[i].hp <= 0)
                     en[i].x=p.x-4;
             }
+            //draw dead enemies
             else
             {
                 if (en[i].direction == 1)
@@ -638,7 +738,7 @@ int main(int argc, char *argv[]){
                 else
                     rotate_sprite(buffer,enleftdead,en[i].x-mapscroll_x,en[i].y-mapscroll_y,en[i].angle);
             }
-
+            //draw player when is invincible
             if(p.hidden == false && p.gm_counter>gm_time)
             {
                 if(p.direction == 1)
@@ -652,7 +752,7 @@ int main(int argc, char *argv[]){
             }
             else if(p.hidden == true && p.gm_counter > gm_time)
                 rotate_sprite(buffer, phidden, p.x-mapscroll_x,p.y-mapscroll_y-walk_ani,angle);
-                
+            //invincibility time
             if(p.gm_counter <= gm_time)
             {
                 if(flash_counter <4)
@@ -664,7 +764,7 @@ int main(int argc, char *argv[]){
 
     }
 }END_OF_MAIN();
-
+//key release function to detect when a key is released
 int keyrel(int k)
 {
     static int initialized = 0;
@@ -689,7 +789,7 @@ int keyrel(int k)
     }
     return false;
 }
-
+//enemy collisionm function with bounty box
 bool encollide(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2)
 {
     //the code is taken from allegro tutorial and made into a function
@@ -713,6 +813,7 @@ bool encollide(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2)
 }
 END_OF_FUNCTION(collide)
 
+//map collision between entities and map tiles
 bool collide(int l,int t,int w, int h, int map[][mapwidth])
 {  
     int r = (l + w);
@@ -725,7 +826,7 @@ bool collide(int l,int t,int w, int h, int map[][mapwidth])
         return true;
     return false;
 }
-
+//door collision when you win
 bool wincollide(int l,int t,int w, int h, int map[][mapwidth])
 {  
     int r = (l + w);
@@ -738,7 +839,7 @@ bool wincollide(int l,int t,int w, int h, int map[][mapwidth])
         return true;
     return false;
 }
-
+//startmenu
 void start(int &num)
 {
      BITMAP *buffer3 = create_bitmap(scrx,scry); 
@@ -756,6 +857,7 @@ void start(int &num)
      num = 0;
 }
 
+//map loading function
 void map::load()
 {
     FILE *fptr;
@@ -764,11 +866,13 @@ void map::load()
     fptr = fopen(name, "r"); 
     if (fptr == NULL){ //Error checking                     
         set_gfx_mode(GFX_TEXT,0,0,0,0);
-        allegro_message("Could not Open Level!");
+        allegro_message("You Win!");
         exit(EXIT_FAILURE);
     }   
     else
     { //read from file
+        initialize = true;
+        enspd+=2;
         for(int i=0;i<mapheight;i++)
         {
             for(int j=0;j<mapwidth;j++)
@@ -779,12 +883,13 @@ void map::load()
     }
     fclose(fptr); 
 }
+//setting up the player
 void player::setup(int x1, int y1)
 {
      x = x1;
      y = y1;
 }
-
+//setting up the enemy
 void enemy::setup(int x1,int y1, int d1,int m1)
 {
     x=x1;
@@ -793,3 +898,4 @@ void enemy::setup(int x1,int y1, int d1,int m1)
     hp=25;
     movement = m1;
 }
+
