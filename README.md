@@ -5,8 +5,6 @@ Arrow Keys: movements
 Z: tackle
 X: assasinate
 
-•	Designed and programmed using C/C++ and Allegro GUI/Animation Library
-<br>
-•	Implemented simple map loading by storing and extracting map information from text files.
-<br>
-•	Implemented player detection AI 
+* Designed and programmed using C/C++ and Allegro GUI/Animation Library
+* Implemented simple map loading with textfiles.
+* Implemented player detection AI with ray-casting
