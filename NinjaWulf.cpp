@@ -17,7 +17,6 @@
 #define enspeed 4
 #define WHITE makecol(255, 255, 255)
 
-using namespace std;
 //Speed Counter
 volatile long speed_counter = 0;\
 void increment_speed_counter(){
