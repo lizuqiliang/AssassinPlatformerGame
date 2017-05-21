@@ -1,9 +1,9 @@
 //Headers
-#include<allegro.h>
-#include<stdio.h>
-#include<stdlib.h>
-#include<iostream>
-#include<math.h>
+#include <allegro.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <iostream>
+#include <math.h>
 
 //Define constants
 #define scrx 800
